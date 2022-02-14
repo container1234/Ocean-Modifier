@@ -106,7 +106,7 @@ public:
     virtual tsl::elm::Element* createUI() override {
         // A OverlayFrame is the base element every overlay consists of. This will draw the default Title and Subtitle.
         // If you need more information in the header or want to change it's look, use a HeaderOverlayFrame.
-        auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "v1.0.0");
+        auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "v1.0.1");
 
         // A list that can contain sub elements and handles scrolling
         auto list = new tsl::elm::List();
@@ -116,7 +116,7 @@ public:
         {
             auto warning = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h){
                 renderer->drawString("\uE150", false, 180, 250, 90, renderer->a(0xFFFF));
-                renderer->drawString("Splatoon 2 is not running!", false, 110, 340, 25, renderer->a(0xFFFF));
+                renderer->drawString("Splatoon 2 is not running!", false, 70, 340, 25, renderer->a(0xFFFF));
                 });
             frame->setContent(warning);
             return frame;
@@ -155,6 +155,10 @@ public:
 
     // Called once every frame to update values
     virtual void update() override {
+        if(metadata.title_id != GAME_TITLE_ID)
+        {
+            return;
+        }
         std::stringstream stream;
         stream << std::uppercase;
         stream << std::setfill('0') << std::setw(8) << std::hex << seed;
