@@ -6,18 +6,40 @@
 #include <iomanip>
 #include <string>
 
+#define GAME_TITLE_ID 0x01003C700009C000
+#define GAME_BUILD_ID 0x1729DD426870976B
 #define SEED_INST_OFFSET 0x0037F340
 
 
 static DmntCheatProcessMetadata metadata;
-static bool fix_seed_flag=false;
-static u32 seed=0;
-static int cursor=0;
+static bool fix_seed_flag = false;
+static u32 seed = 0;
+static int cursor = 0;
 static tsl::elm::ListItem *modify_seed;
+
+
+bool check_if_seed_fixed()
+{
+    char inst[8];
+    constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
+    dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + SEED_INST_OFFSET, &inst, sizeof(inst));
+    return !((inst == inst_orig) | (inst[3] != 0xD2) | (inst[7] != 0xF2));
+}
+
+u32 read_seed_inst()
+{
+    u32 value = 0;
+    u32 inst;
+    dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + SEED_INST_OFFSET, &inst, sizeof(inst));
+    value |= (inst >> 5 & 0xFFFF) << 16;
+    dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
+    value |= (inst >> 5 & 0xFFFF);
+    return value;
+}
 
 void write_seed_inst(u32 value)
 {
-    u32 inst;
+    u32 inst = 0;
     inst = 0xD2A00000 | ((value >> 16) << 5);
     dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + SEED_INST_OFFSET, &inst, sizeof(inst));
     inst = 0xF2800000 | ((value & 0xFFFF) << 5);
@@ -30,35 +52,48 @@ void restore_seed_inst()
     dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + SEED_INST_OFFSET, &inst_orig, sizeof(inst_orig));
 }
 
+void update_seed_inst()
+{
+    if(fix_seed_flag)
+    {
+        write_seed_inst(seed);
+    } else {
+        restore_seed_inst();
+    }
+}
+
 void fix_seed_toggle(bool state)
 {
     fix_seed_flag = state;
+    update_seed_inst();
 }
 
-bool change_seed_value(u64 button)
+bool change_seed_value(u64 keys)
 {
-    if(button == HidNpadButton_L)
+    switch (keys)
     {
-        cursor++;
-        if(cursor > 7)
-        {
-            cursor = 0;
-        }
-    } else if(button == HidNpadButton_R){
-        cursor--;
-        if(cursor < 0)
-        {
-            cursor = 7;
-        }
-    } else if(button == HidNpadButton_X){
-        seed += 1 << (cursor * 4);
-    } else if(button == HidNpadButton_Y){
-        seed -= 1 << (cursor * 4);
-    } else if(button == HidNpadButton_A){
+    case HidNpadButton_L:
+        if (cursor < 7)
+            cursor++;
+        break;
+    case HidNpadButton_R:
+        if (cursor > 0)
+            cursor--;
+        break;
+    case HidNpadButton_A:
         write_seed_inst(seed);
-    } else {
+        break;
+    case HidNpadButton_X:
+        seed += 1 << (cursor * 4);
+        break;
+    case HidNpadButton_Y:
+        seed -= 1 << (cursor * 4);
+        break;
+    default:
         return false;
+        break;
     }
+    update_seed_inst();
     return true;
 }
 
@@ -75,12 +110,24 @@ public:
 
         // A list that can contain sub elements and handles scrolling
         auto list = new tsl::elm::List();
-
-        // auto *fix_seed = new tsl::elm::ToggleListItem("Fix Seed", fix_seed_flag);
-        // fix_seed->setStateChangedListener(fix_seed_toggle);
-        // list->addItem(fix_seed);
         
-        auto *reset_seed = new tsl::elm::ListItem("Random Seed");
+        // if Splatoon 2 is not running
+        if(metadata.title_id != GAME_TITLE_ID)
+        {
+            auto warning = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h){
+                renderer->drawString("\uE150", false, 180, 250, 90, renderer->a(0xFFFF));
+                renderer->drawString("Splatoon 2 is not running!", false, 110, 340, 25, renderer->a(0xFFFF));
+                });
+            frame->setContent(warning);
+            return frame;
+        }
+
+        auto *fix_seed = new tsl::elm::ToggleListItem("Fix Seed", check_if_seed_fixed());
+        fix_seed->setStateChangedListener(fix_seed_toggle);
+        list->addItem(fix_seed);
+        
+        /*
+        auto *reset_seed = new tsl::elm::ToggleListItem("Fix Seed", fix_seed_flag);
         reset_seed->setClickListener([](u64 keys){
             if(keys == HidNpadButton_A)
             {
@@ -90,12 +137,14 @@ public:
             return false;
         });
         list->addItem(reset_seed);
+        */
         
         modify_seed = new tsl::elm::ListItem("Fix Seed:");
         modify_seed->setClickListener(change_seed_value);
         list->addItem(modify_seed);
         
         // list->addItem(new tsl::elm::CategoryHeader("Seed Information"));
+        
         
         // Add the list to the frame for it to be drawn
         frame->setContent(list);
@@ -107,16 +156,9 @@ public:
     // Called once every frame to update values
     virtual void update() override {
         std::stringstream stream;
+        stream << std::uppercase;
         stream << std::setfill('0') << std::setw(8) << std::hex << seed;
-        modify_seed->setText("Seed: " + stream.str());
-        /*
-        if(fix_seed_flag)
-        {
-            write_seed_inst(seed);
-        } else {
-            restore_seed_inst();
-        }
-        */
+        modify_seed->setText("Seed: 0x" + stream.str());
     }
 
     // Called once every frame to handle inputs not handled by other UI elements
@@ -137,7 +179,18 @@ public:
         dmntchtExit();
     }  // Called at the end to clean up all services previously initialized
 
-    virtual void onShow() override {}    // Called before overlay wants to change from invisible to visible state
+    virtual void onShow() override {
+        if(metadata.title_id != GAME_TITLE_ID)
+        {
+            return;
+        }
+        
+        fix_seed_flag = check_if_seed_fixed();
+        if(fix_seed_flag)
+        {
+            seed = read_seed_inst();
+        }
+    }    // Called before overlay wants to change from invisible to visible state
     virtual void onHide() override {}    // Called before overlay wants to change from visible to invisible state
 
     virtual std::unique_ptr<tsl::Gui> loadInitialGui() override {
