@@ -10,7 +10,6 @@
 #define GAME_BUILD_ID 0x1729DD426870976B
 
 static DmntCheatProcessMetadata metadata;
-static tsl::elm::ListItem *modify_seed;
 
 class OverlayOcean : public tsl::Overlay
 {

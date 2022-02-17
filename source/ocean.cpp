@@ -7,6 +7,7 @@ Ocean::Ocean(DmntCheatProcessMetadata metadata)
     this->rom_type = static_cast<Ocean::RomType>(metadata.title_id);
     this->game_random_seed = 0;
     this->fix_seed_flag = false;
+    this->target = new tsl::elm::ListItem(convert_u32_to_hex(this->game_random_seed));
     switch (this->rom_type)
     {
     case Ocean::RomType::JP:
@@ -70,4 +71,12 @@ void Ocean::restore_game_random_seed()
 {
     constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
     dmntchtWriteCheatProcessMemory(this->base + SEED_INST_OFFSET, &inst_orig, sizeof(inst_orig));
+}
+
+std::string Ocean::convert_u32_to_hex(u32 game_random_seed)
+{
+    std::stringstream stream;
+    stream << std::uppercase;
+    stream << std::setfill('0') << std::setw(8) << std::hex << game_random_seed;
+    return stream.str();
 }
