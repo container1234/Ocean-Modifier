@@ -45,7 +45,7 @@ TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source libs/Atmosphere-libs/libstratosphere/source/dmnt
 DATA		:=	data
-INCLUDES	:=	libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt
+INCLUDES	:=	include libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt
 
 NO_ICON		:=  1
 
