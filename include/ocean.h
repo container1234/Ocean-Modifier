@@ -1,4 +1,3 @@
-#pragma once
 #include <tesla.hpp>
 #include <dmntcht.h>
 #include <string.h>
@@ -9,6 +8,9 @@
 #include <string>
 #include <random>
 #include <time.h>
+
+#ifndef OCEAN_MODIFIER_INCLUDE_OCEAN_H_
+#define OCEAN_MODIFIER_INCLUDE_OCEAN_H_
 #define OVERLAY_VERSION "v1.0.2"
 #define OVERLAY_TITLE "Ocean Modifier"
 
@@ -32,25 +34,25 @@ namespace Wave
         High
     };
 
-    // WaterLevel WaterLevelName(std::string tide)
-    // {
-    //     if (tide == "Low")
-    //     {
-    //         return WaterLevel::Low;
-    //     }
+    WaterLevel WaterLevelName(std::string tide)
+    {
+        if (tide == "Low")
+        {
+            return WaterLevel::Low;
+        }
 
-    //     if (tide == "Middle")
-    //     {
-    //         return WaterLevel::Middle;
-    //     }
+        if (tide == "Middle")
+        {
+            return WaterLevel::Middle;
+        }
 
-    //     if (tide == "High")
-    //     {
-    //         return WaterLevel::High;
-    //     }
+        if (tide == "High")
+        {
+            return WaterLevel::High;
+        }
 
-    //     return WaterLevel::Middle;
-    // }
+        return WaterLevel::Middle;
+    }
 
     // EventType ToEventType(std::string event)
     // {
@@ -205,8 +207,7 @@ public:
         search->setClickListener([this](u64 keys)
                                  {
             if (keys & HidNpadButton_A) {
-                std::thread t([this]
-                              { find_target_seed(); });
+                find_target_seed();
                 return true;
             }
             return false; });
@@ -295,3 +296,4 @@ public:
 private:
     u32 base;
 };
+#endif // OCEAN_MODIFIER_INCLUDE_OCEAN_H_
