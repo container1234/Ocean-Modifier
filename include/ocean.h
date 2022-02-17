@@ -8,49 +8,127 @@
 #include <iomanip>
 #include <string>
 #include <random>
+#include <time.h>
 #define OVERLAY_VERSION "v1.0.2"
 #define OVERLAY_TITLE "Ocean Modifier"
 
-class WaveInfo
+namespace Wave
 {
-public:
-    tsl::elm::NamedStepTrackBar *tide = new tsl::elm::NamedStepTrackBar("\u223F", {"High", "Normal", "Low"});
-    tsl::elm::NamedStepTrackBar *event = new tsl::elm::NamedStepTrackBar("\u223F", {"No Event", "Rush", "Goldie Seeking", "Griller", "Mothership", "Fog", "Cohock Charge"});
-};
-
-struct Wave
-{
-    u8 event[3] = {0x0, 0x0, 0x0};
-    u8 tide[3] = {0x0, 0x0, 0x0};
-};
-
-class Random
-{
-public:
-    Random(u32 seed)
+    enum class EventType
     {
-        this->seed1 = 0x6C078965 * (seed ^ (seed >> 30)) + 1;
-        this->seed2 = 0x6C078965 * (seed1 ^ (seed1 >> 30)) + 2;
-        this->seed3 = 0x6C078965 * (seed2 ^ (seed2 >> 30)) + 3;
-        this->seed4 = 0x6C078965 * (seed3 ^ (seed3 >> 30)) + 4;
-    }
+        None,
+        Rush,
+        Goldie,
+        Griller,
+        Fog,
+        Rally,
+        Canon
+    };
 
-    u32 getU32()
+    enum class WaterLevel
     {
-        u32 n = seed1 ^ (seed1 << 11);
-        seed1 = seed2;
-        seed2 = seed3;
-        seed3 = seed4;
-        seed4 = n ^ (n >> 8) ^ seed4 ^ (seed4 >> 19);
-        return seed4;
-    }
+        Low,
+        Middle,
+        High
+    };
 
-private:
-    u32 seed1;
-    u32 seed2;
-    u32 seed3;
-    u32 seed4;
-};
+    // WaterLevel WaterLevelName(std::string tide)
+    // {
+    //     if (tide == "Low")
+    //     {
+    //         return WaterLevel::Low;
+    //     }
+
+    //     if (tide == "Middle")
+    //     {
+    //         return WaterLevel::Middle;
+    //     }
+
+    //     if (tide == "High")
+    //     {
+    //         return WaterLevel::High;
+    //     }
+
+    //     return WaterLevel::Middle;
+    // }
+
+    // EventType ToEventType(std::string event)
+    // {
+    //     if (event == "None")
+    //     {
+    //         return EventType::None;
+    //     }
+    //     if (event == "Rush")
+    //     {
+    //         return EventType::Rush;
+    //     }
+    //     if (event == "Goldie")
+    //     {
+    //         return EventType::Goldie;
+    //     }
+    //     if (event == "Griller")
+    //     {
+    //         return EventType::Griller;
+    //     }
+    //     if (event == "Rally")
+    //     {
+    //         return EventType::Rally;
+    //     }
+    //     if (event == "Fog")
+    //     {
+    //         return EventType::Fog;
+    //     }
+    //     if (event == "Caonon")
+    //     {
+    //         return EventType::Canon;
+    //     }
+    //     return EventType::None;
+    // }
+
+    class WaveInfo
+    {
+    public:
+        tsl::elm::NamedStepTrackBar *tide = new tsl::elm::NamedStepTrackBar("\u223F", {"Low", "Middle", "High"});
+        tsl::elm::NamedStepTrackBar *event = new tsl::elm::NamedStepTrackBar("\u223F", {"None", "Rush", "Goldie", "Griller", "Rally", "Fog", "Canon"});
+    };
+
+    struct Wave
+    {
+        u8 event[3] = {0x0, 0x0, 0x0};
+        u8 tide[3] = {0x0, 0x0, 0x0};
+    };
+}
+
+namespace Random
+{
+    class Random
+    {
+    public:
+        Random(u32 seed)
+        {
+            this->seed1 = 0x6C078965 * (seed ^ (seed >> 30)) + 1;
+            this->seed2 = 0x6C078965 * (seed1 ^ (seed1 >> 30)) + 2;
+            this->seed3 = 0x6C078965 * (seed2 ^ (seed2 >> 30)) + 3;
+            this->seed4 = 0x6C078965 * (seed3 ^ (seed3 >> 30)) + 4;
+        }
+
+        u32 getU32()
+        {
+            u32 n = seed1 ^ (seed1 << 11);
+            seed1 = seed2;
+            seed2 = seed3;
+            seed3 = seed4;
+            seed4 = n ^ (n >> 8) ^ seed4 ^ (seed4 >> 19);
+            return seed4;
+        }
+
+    private:
+        u32 seed1;
+        u32 seed2;
+        u32 seed3;
+        u32 seed4;
+    };
+}
 
 class SeedSearch : public tsl::Gui
 {
@@ -58,13 +136,20 @@ public:
     SeedSearch(u32 *game_random_seed)
     {
         this->game_random_seed = game_random_seed;
+        this->mt = std::mt19937(time(NULL));
     }
     u32 *game_random_seed;
+    std::mt19937 mt;
 
-    void get_wave_info(u32 seed)
+    std::vector<Wave::WaveInfo> waves = {
+        Wave::WaveInfo(),
+        Wave::WaveInfo(),
+        Wave::WaveInfo()};
+
+    u32 get_wave_info(u32 seed)
     {
-        Random rnd = Random(seed);
-        Wave mWave = Wave();
+        Random::Random rnd = Random::Random(seed);
+        Wave::Wave mWave = Wave::Wave();
         const std::vector<u8> mEvent = {0x12, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
         const std::vector<u8> mTide = {0x01, 0x03, 0x01};
 
@@ -87,18 +172,21 @@ public:
                     mWave.event[wave] == 6 ? mWave.tide[wave] = 0 : mWave.tide[wave] = tide;
             }
         }
+
+        return mWave.tide[0] * 100000 + mWave.event[0] * 10000 + mWave.tide[1] * 1000 + mWave.event[1] * 100 + mWave.tide[2] * 10 + mWave.event[2] * 1;
     }
 
     void find_target_seed()
     {
-
-        std::random_device rnd;
-        u32 random;
-        for (u16 loop = 0; loop < 0xF; loop++)
-        {
-            random = static_cast<u32>(rnd());
-        }
-        *(this->game_random_seed) = random;
+        // waves[0].tide->getValue();
+        // for (u16 loop = 0; loop <= 0x1000; loop++)
+        // {
+        //     if (250625 == get_wave_info(loop))
+        //     {
+        //         *(this->game_random_seed) = loop;
+        //         break;
+        //     }
+        // }
     }
 
     virtual tsl::elm::Element *createUI() override
@@ -106,12 +194,7 @@ public:
         auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "Seed Modifier");
         auto list = new tsl::elm::List();
 
-        std::vector<WaveInfo> waves = {
-            WaveInfo(),
-            WaveInfo(),
-            WaveInfo()};
-
-        std::for_each(waves.begin(), waves.end(), [list](WaveInfo waveinfo)
+        std::for_each(waves.begin(), waves.end(), [list](Wave::WaveInfo waveinfo)
                       {
             list->addItem(new tsl::elm::CategoryHeader("WAVE"));
             list->addItem(waveinfo.tide);
@@ -122,7 +205,8 @@ public:
         search->setClickListener([this](u64 keys)
                                  {
             if (keys & HidNpadButton_A) {
-                find_target_seed();
+                std::thread t([this]
+                              { find_target_seed(); });
                 return true;
             }
             return false; });
