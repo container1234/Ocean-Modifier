@@ -34,25 +34,25 @@ namespace Wave
         High
     };
 
-    WaterLevel WaterLevelName(std::string tide)
-    {
-        if (tide == "Low")
-        {
-            return WaterLevel::Low;
-        }
+    // WaterLevel WaterLevelName(std::string tide)
+    // {
+    //     if (tide == "Low")
+    //     {
+    //         return WaterLevel::Low;
+    //     }
 
-        if (tide == "Middle")
-        {
-            return WaterLevel::Middle;
-        }
+    //     if (tide == "Middle")
+    //     {
+    //         return WaterLevel::Middle;
+    //     }
 
-        if (tide == "High")
-        {
-            return WaterLevel::High;
-        }
+    //     if (tide == "High")
+    //     {
+    //         return WaterLevel::High;
+    //     }
 
-        return WaterLevel::Middle;
-    }
+    //     return WaterLevel::Middle;
+    // }
 
     // EventType ToEventType(std::string event)
     // {
