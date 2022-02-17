@@ -37,58 +37,8 @@ namespace ocean
             High
         };
 
-        // int WaterLevelName(std::string tide)
-        // {
-        //     if (tide == "Low")
-        //     {
-        //         return 0;
-        //     }
-
-        //     if (tide == "Middle")
-        //     {
-        //         return 0;
-        //     }
-
-        //     if (tide == "High")
-        //     {
-        //         return 0;
-        //     }
-
-        //     return 0;
-        // }
-
-        // EventType ToEventType(std::string event)
-        // {
-        //     if (event == "None")
-        //     {
-        //         return EventType::None;
-        //     }
-        //     if (event == "Rush")
-        //     {
-        //         return EventType::Rush;
-        //     }
-        //     if (event == "Goldie")
-        //     {
-        //         return EventType::Goldie;
-        //     }
-        //     if (event == "Griller")
-        //     {
-        //         return EventType::Griller;
-        //     }
-        //     if (event == "Rally")
-        //     {
-        //         return EventType::Rally;
-        //     }
-        //     if (event == "Fog")
-        //     {
-        //         return EventType::Fog;
-        //     }
-        //     if (event == "Caonon")
-        //     {
-        //         return EventType::Canon;
-        //     }
-        //     return EventType::None;
-        // }
+        WaterLevel WaterLevelName(std::string);
+        EventType ToEventType(std::string);
 
         class WaveInfo
         {
