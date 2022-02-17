@@ -39,13 +39,13 @@ include $(DEVKITPRO)/libnx/switch_rules
 #---------------------------------------------------------------------------------
 
 APP_TITLE			:=		Ocean Modifier
-APP_VERSION 	:= 		1.0.1
+APP_VERSION 	:= 		1.0.2
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source libs/Atmosphere-libs/libstratosphere/source/dmnt
 DATA		:=	data
-INCLUDES	:=	libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt
+INCLUDES	:=	include libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt
 
 NO_ICON		:=  1
 
@@ -54,7 +54,7 @@ NO_ICON		:=  1
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 
-CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
+CFLAGS	:=	-g -Wall -Wshift-count-overflow -O2 -ffunction-sections \
 			$(ARCH) $(DEFINES)
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
