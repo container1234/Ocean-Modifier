@@ -60,15 +60,15 @@ namespace tesla
 
         void find_target_seed()
         {
-            // waves[0].tide->getValue();
-            // for (u16 loop = 0; loop <= 0x1000; loop++)
-            // {
-            //     if (250625 == get_wave_info(loop))
-            //     {
-            //         *(this->game_random_seed) = loop;
-            //         break;
-            //     }
-            // }
+            u32 random_seed = 0x00000000;
+            u32 target_wave = this->get_target_seed();
+            for (u32 loop = 0; loop <= 0x1000; loop++)
+            {
+                random_seed = static_cast<u32>(mt());
+                if (target_wave == get_wave_info(random_seed))
+                    break;
+            }
+            *(this->game_random_seed) = random_seed;
         }
 
         virtual tsl::elm::Element *createUI() override
@@ -93,6 +93,12 @@ namespace tesla
             return false; });
             list->addItem(search);
             return frame;
+        }
+
+    private:
+        u32 get_target_seed()
+        {
+            return (u32)waves[0].tide->getProgress() * 100000 + (u32)waves[0].event->getProgress() * 10000 + (u32)waves[1].tide->getProgress() * 1000 + (u32)waves[1].event->getProgress() * 100 + (u32)waves[2].tide->getProgress() * 10 + (u32)waves[2].event->getProgress() * 1;
         }
     };
 
