@@ -2,6 +2,19 @@
 
 namespace tesla
 {
+    u32 get_target_wave()
+    {
+        return wave.tide[0] * 100000 + wave.event[0] * 10000 + wave.tide[1] * 1000 + wave.event[1] * 100 + wave.tide[2] * 10 + wave.event[2];
+    }
+
+    std::string get_target_wave_string()
+    {
+        std::stringstream stream;
+        stream << std::uppercase;
+        stream << std::setfill('0') << std::setw(6) << get_target_wave();
+        return stream.str();
+    }
+
     bool check_if_seed_fixed()
     {
         char inst[8];
@@ -19,6 +32,47 @@ namespace tesla
         dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
         value |= (inst >> 5 & 0xFFFF);
         return value;
+    }
+
+    u32 SeedSearch::search_target_seed()
+    {
+        u32 target_wave = get_target_wave();
+        for (u32 loop = 0; loop <= 0x10000; loop++)
+        {
+            u32 random_seed = static_cast<u32>(mt());
+            if (target_wave == get_wave_info(random_seed))
+                return random_seed;
+        }
+        return 0x00000000;
+    }
+
+    u32 SeedSearch::get_wave_info(u32 seed)
+    {
+        sead::random::Random rnd = sead::random::Random(seed);
+        ocean::wave::WaveType mWave = ocean::wave::WaveType();
+        const std::vector<u8> mEvent = {0x12, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+        const std::vector<u8> mTide = {0x01, 0x03, 0x01};
+
+        for (u16 wave = 0; wave < 3; ++wave)
+        {
+            for (u64 event = 0, sum = 0; event < 7; ++event) // Calculate Wave Event
+            {
+                if ((wave > 0) && (mWave.event[wave - 1] != 0) && (mWave.event[wave - 1] == event))
+                    continue;
+                sum += mEvent[event];
+                if ((rnd.getU32() * sum >> 0x20) < mEvent[event])
+                    mWave.event[wave] = event;
+            }
+            for (u64 tide = 0, sum = 0; tide < 3; ++tide) // Calculate Wave Tide
+            {
+                if ((tide == 0) && (1 <= mWave.event[wave] && (mWave.event[wave] <= 3)))
+                    continue;
+                sum += mTide[tide];
+                if ((rnd.getU32() * sum >> 0x20) < mTide[tide])
+                    mWave.event[wave] == 6 ? mWave.tide[wave] = 0 : mWave.tide[wave] = tide;
+            }
+        }
+        return mWave.tide[0] * 100000 + mWave.event[0] * 10000 + mWave.tide[1] * 1000 + mWave.event[1] * 100 + mWave.tide[2] * 10 + mWave.event[2] * 1;
     }
 
     void OceanModifier::write_seed_inst(u32 value)

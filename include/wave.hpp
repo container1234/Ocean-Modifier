@@ -49,8 +49,8 @@ namespace ocean
 
         struct WaveType
         {
-            u8 event[3] = {0x0, 0x0, 0x0};
-            u8 tide[3] = {0x0, 0x0, 0x0};
+            u32 event[3] = {0x0, 0x0, 0x0};
+            u32 tide[3] = {0x0, 0x0, 0x0};
         };
     }
 }

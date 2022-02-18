@@ -12,6 +12,7 @@
 #define OCEAN_MODIFIER_INCLUDE_MAIN_H_
 #define GAME_BUILD_ID 0x1729DD426870976B
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
+static DmntCheatProcessMetadata metadata;
 
 class OverlayOcean : public tsl::Overlay
 {
