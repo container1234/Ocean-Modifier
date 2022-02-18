@@ -33,6 +33,10 @@ namespace ocean
 
     void to_json(nlohmann::json &j, const Config &config)
     {
+        j = nlohmann::json{
+            {"seed", config.seed},
+            {"tide", config.tide},
+            {"event", config.event}};
     }
 
     void from_json(const nlohmann::json &j, Config &config)

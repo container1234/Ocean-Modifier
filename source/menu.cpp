@@ -1,13 +1,14 @@
 #include "menu.hpp"
+#include <fstream>
 
 namespace tesla
 {
-    u32 get_target_wave()
+    u32 SeedSearch::get_target_wave()
     {
-        return wave.tide[0] * 100000 + wave.event[0] * 10000 + wave.tide[1] * 1000 + wave.event[1] * 100 + wave.tide[2] * 10 + wave.event[2];
+        return config.tide[0] * 100000 + config.event[0] * 10000 + config.tide[1] * 1000 + config.event[1] * 100 + config.tide[2] * 10 + config.event[2];
     }
 
-    std::string get_target_wave_string()
+    std::string SeedSearch::get_target_wave_string()
     {
         std::stringstream stream;
         stream << std::uppercase;
@@ -15,6 +16,7 @@ namespace tesla
         return stream.str();
     }
 
+    // Check game random seed is fixed
     bool check_if_seed_fixed()
     {
         char inst[8];
@@ -23,6 +25,7 @@ namespace tesla
         return !((inst == inst_orig) | (inst[3] != 0xD2) | (inst[7] != 0xF2));
     }
 
+    // Read data from memory
     u32 read_seed_inst()
     {
         u32 value = 0;
@@ -37,32 +40,35 @@ namespace tesla
     SeedSearch::SeedSearch()
     {
         this->mt = std::mt19937(time(NULL));
-        nlohmann::json json = nlohmann::json::parse(load());
-        this->config = json.get<ocean::Config>();
+        // Load config.json
+        this->load();
     }
 
-    std::string SeedSearch::load()
+    // Save config.json
+    void SeedSearch::write()
     {
         const char *CONFIG_FILE = "/config/ocean/config.json";
-        FsFileSystem fsSdmc;
-        if (R_FAILED(fsOpenSdCardFileSystem(&fsSdmc)))
-            return "";
-        FsFile fileConfig;
-        if (R_FAILED(fsFsOpenFile(&fsSdmc, CONFIG_FILE, FsOpenMode_Read, &fileConfig)))
-            return "";
-
-        s64 configFileSize;
-        if (R_FAILED(fsFileGetSize(&fileConfig, &configFileSize)))
-            return "";
-
-        std::string configFileData(configFileSize, '\0');
-        u64 readSize;
-        Result rc = fsFileRead(&fileConfig, 0, configFileData.data(), configFileSize, FsReadOption_None, &readSize);
-        if (R_FAILED(rc) || readSize != static_cast<u64>(configFileSize))
-            return "";
-        return configFileData;
+        tsl::hlp::doWithSDCardHandle([&]()
+                                     {
+            std::ofstream ofs(CONFIG_FILE, std::ofstream::out | std::ofstream::trunc);
+            nlohmann::json j = config;
+            std::string jsonString = j.dump(4);
+            ofs << jsonString << std::endl; });
     }
 
+    // Load config.json
+    void SeedSearch::load()
+    {
+        const char *CONFIG_FILE = "/config/ocean/config.json";
+        tsl::hlp::doWithSDCardHandle([&]()
+                                     { 
+            std::ifstream ifs(CONFIG_FILE);
+            std::string data = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+            nlohmann::json json = nlohmann::json::parse(data);
+            this->config = json.get<ocean::Config>(); });
+    }
+
+    // Search target seed
     u32 SeedSearch::search_target_seed()
     {
         u32 target_wave = get_target_wave();
@@ -75,6 +81,7 @@ namespace tesla
         return 0x00000000;
     }
 
+    // Calculate wave info
     u32 SeedSearch::get_wave_info(u32 seed)
     {
         sead::random::Random rnd = sead::random::Random(seed);
@@ -104,6 +111,7 @@ namespace tesla
         return mWave.tide[0] * 100000 + mWave.event[0] * 10000 + mWave.tide[1] * 1000 + mWave.event[1] * 100 + mWave.tide[2] * 10 + mWave.event[2] * 1;
     }
 
+    // Write data to memory
     void OceanModifier::write_seed_inst(u32 value)
     {
         u32 inst = 0;
@@ -113,12 +121,14 @@ namespace tesla
         dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
     }
 
+    // Restore original data
     void OceanModifier::restore_seed_inst()
     {
         constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
         dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET, &inst_orig, sizeof(inst_orig));
     }
 
+    // Update game random seed
     void OceanModifier::update_seed_inst()
     {
         if (fix_seed_flag)
@@ -127,6 +137,7 @@ namespace tesla
             restore_seed_inst();
     }
 
+    // Toggle fix seed flag
     void OceanModifier::fix_seed_toggle(bool state)
     {
         fix_seed_flag = state;
@@ -157,6 +168,7 @@ namespace tesla
         }
     }
 
+    // Get Hex string
     std::string OceanModifier::convert_u32_to_hex(u32 game_random_seed)
     {
         std::stringstream stream;
@@ -165,6 +177,7 @@ namespace tesla
         return "0x" + stream.str();
     }
 
+    // Get Hex string
     std::string OceanModifier::convert_u64_to_hex(u64 address)
     {
         std::stringstream stream;

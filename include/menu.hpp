@@ -21,22 +21,24 @@ namespace tesla
     static u32 game_random_seed;
     static ocean::wave::WaveType wave;
 
-    std::string get_target_wave_string();
-    u32 get_target_wave();
-
     class SeedSearch : public tsl::Gui
     {
     public:
         SeedSearch();
         std::mt19937 mt;
         ocean::Config config;
-        std::string load();
+        void load();
+        void write();
         std::vector<ocean::wave::WaveInfo> waves = {
             ocean::wave::WaveInfo(),
             ocean::wave::WaveInfo(),
             ocean::wave::WaveInfo()};
         u32 get_wave_info(u32);
         u32 search_target_seed();
+        std::string get_target_wave_string();
+        u32 get_target_wave();
+        tsl::elm::ListItem *search;
+        tsl::elm::ListItem *logger;
 
         virtual tsl::elm::Element *createUI() override
         {
@@ -48,6 +50,10 @@ namespace tesla
                 const int index = std::distance(waves.begin(), itr);
                 itr->tide->setProgress(config.tide[index]);
                 itr->event->setProgress(config.event[index]);
+                itr->tide->setValueChangedListener([this, index](int value)
+                                                   { config.tide[index] = value; });
+                itr->event->setValueChangedListener([this, index](int value)
+                                                    { config.event[index] = value; });
                 list->addItem(new tsl::elm::CategoryHeader("WAVE"));
                 list->addItem(itr->tide);
                 list->addItem(itr->event);
@@ -55,7 +61,8 @@ namespace tesla
 
             frame->setContent(list);
 
-            auto search = new tsl::elm::ListItem("Search", std::to_string(config.seed));
+            search = new tsl::elm::ListItem("Search");
+            logger = new tsl::elm::ListItem("Save");
             search->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
@@ -63,11 +70,23 @@ namespace tesla
                 return true;
             }
             return false; });
+            logger->setClickListener([this](u64 keys)
+                                     {
+            if (keys & HidNpadButton_A) {
+                this->write();
+                return true;
+            }
+            return false; });
+            search->setValue(get_target_wave_string());
             list->addItem(search);
+            list->addItem(logger);
             return frame;
         }
 
-        virtual void update() override{};
+        virtual void update() override
+        {
+            search->setValue(get_target_wave_string());
+        };
     };
 
     class OceanModifier : public tsl::Gui
@@ -94,7 +113,7 @@ namespace tesla
 
             auto frame = new tsl::elm::OverlayFrame(OVERLAY_TITLE, OVERLAY_VERSION);
             auto list = new tsl::elm::List();
-            search = new tsl::elm::ListItem("Search", get_target_wave_string());
+            search = new tsl::elm::ListItem("Search");
             auto *writer = new tsl::elm::ListItem("Write");
 
             // Method
@@ -122,6 +141,7 @@ namespace tesla
             list->addItem(title);
             list->addItem(offset);
             list->addItem(modifier);
+            // Seed
             list->addItem(new tsl::elm::CategoryHeader("Seed"));
             list->addItem(search);
             target = new tsl::elm::ListItem("Target", convert_u32_to_hex(game_random_seed));
@@ -130,6 +150,11 @@ namespace tesla
             list->addItem(memory);
             list->addItem(writer);
             frame->setContent(list);
+
+            // Credits
+            list->addItem(new tsl::elm::CategoryHeader("Credits"));
+            list->addItem(new tsl::elm::ListItem("Author", "@container12345"));
+            list->addItem(new tsl::elm::ListItem("Contributor", "@tkgling"));
             return frame;
         }
 
