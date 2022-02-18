@@ -2,52 +2,59 @@
 
 namespace tesla
 {
-    void restore_game_random_seed()
+    bool check_if_seed_fixed()
     {
-        constexpr char inst[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
-        dmntchtWriteCheatProcessMemory(offset, &inst, sizeof(inst));
+        char inst[8];
+        constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
+        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
+        return !((inst == inst_orig) | (inst[3] != 0xD2) | (inst[7] != 0xF2));
     }
 
-    void write_seed_to_memory(u32 value)
+    u32 read_seed_inst()
     {
-        u32 inst = 0;
-        inst = 0xD2A00000 | ((value >> 16) << 5);
-        dmntchtWriteCheatProcessMemory(offset, &inst, sizeof(inst));
-        inst = 0xF2800000 | ((value & 0xFFFF) << 5);
-        dmntchtWriteCheatProcessMemory(offset + 4, &inst, sizeof(inst));
-    }
-
-    u32 read_fixed_seed()
-    {
-        return 0x00012345;
-        u32 value = 0x00000000;
+        u32 value = 0;
         u32 inst;
-        dmntchtReadCheatProcessMemory(offset, &inst, sizeof(inst));
+        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
         value |= (inst >> 5 & 0xFFFF) << 16;
-        dmntchtReadCheatProcessMemory(offset + 4, &inst, sizeof(inst));
+        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
         value |= (inst >> 5 & 0xFFFF);
         return value;
     }
 
-    bool check_seed_is_fixed()
+    void OceanModifier::write_seed_inst(u32 value)
     {
-        char inst[8];
-        constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
-        dmntchtReadCheatProcessMemory(offset, &inst, sizeof(inst));
-        return !((inst == inst_orig) | (inst[3] != 0xD2) | (inst[7] != 0xF2));
+        u32 inst = 0;
+        inst = 0xD2A00000 | ((value >> 16) << 5);
+        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
+        inst = 0xF2800000 | ((value & 0xFFFF) << 5);
+        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
     }
 
-    void update_inst(bool state)
+    void OceanModifier::restore_seed_inst()
+    {
+        constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
+        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET, &inst_orig, sizeof(inst_orig));
+    }
+
+    void OceanModifier::update_seed_inst()
+    {
+        if (fix_seed_flag)
+            write_seed_inst(game_random_seed);
+        else
+            restore_seed_inst();
+    }
+
+    void OceanModifier::fix_seed_toggle(bool state)
     {
         fix_seed_flag = state;
-        if (state)
-            write_seed_to_memory(game_random_seed);
-        else
-            restore_game_random_seed();
+        update_seed_inst();
     }
 
     OceanModifier::OceanModifier(DmntCheatProcessMetadata metadata)
     {
+        // this->metadata = metadata;
+        base = metadata.main_nso_extents.base;
+        title_id = metadata.title_id;
         this->rom_type = static_cast<ocean::rom::RomType>(metadata.title_id);
 
         switch (this->rom_type)
@@ -74,4 +81,14 @@ namespace tesla
         stream << std::setfill('0') << std::setw(8) << std::hex << game_random_seed;
         return "0x" + stream.str();
     }
+
+    std::string OceanModifier::convert_u64_to_hex(u64 address)
+    {
+        std::stringstream stream;
+        stream << std::uppercase;
+        stream << std::setfill('0') << std::setw(16) << std::hex << address;
+        return "0x" + stream.str();
+    }
+
+    bool OceanModifier::fix_seed_flag = false;
 }
