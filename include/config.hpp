@@ -1,6 +1,8 @@
 #include <json.hpp>
 #include <tesla.hpp>
 #include <functional>
+#include <vector>
+#include <string>
 
 #ifndef OCEAN_MODIFIER_INCLUDE_CONFIG_H_
 #define OCEAN_MODIFIER_INCLUDE_CONFIG_H_
@@ -10,19 +12,12 @@ namespace ocean
     class Config
     {
     public:
-        static nlohmann::json read();
-        static void update(std::function<void(nlohmann::json &)> const &updator);
-
-        u32 wave;
-        u8 *tide[3];
-        u8 *event[3];
-
-    private:
-        static nlohmann::json initialize();
-
-    private:
-        Config() {}
-        static const char *FILE_PATH;
+        u32 seed;
+        std::vector<u8> tide;
+        std::vector<u8> event;
     };
+
+    void to_json(nlohmann::json &, const Config &);
+    void from_json(const nlohmann::json &, Config &);
 }
 #endif // OCEAN_MODIFIER_INCLUDE_CONFIG_H_

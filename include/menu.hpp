@@ -27,11 +27,10 @@ namespace tesla
     class SeedSearch : public tsl::Gui
     {
     public:
-        SeedSearch()
-        {
-            this->mt = std::mt19937(time(NULL));
-        }
+        SeedSearch();
         std::mt19937 mt;
+        ocean::Config config;
+        std::string load();
         std::vector<ocean::wave::WaveInfo> waves = {
             ocean::wave::WaveInfo(),
             ocean::wave::WaveInfo(),
@@ -44,14 +43,19 @@ namespace tesla
             auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "Seed Search");
             auto list = new tsl::elm::List();
 
-            std::for_each(waves.begin(), waves.end(), [list](ocean::wave::WaveInfo waveinfo)
-                          {
-            list->addItem(new tsl::elm::CategoryHeader("WAVE"));
-            list->addItem(waveinfo.tide);
-            list->addItem(waveinfo.event); });
+            for (auto itr = waves.begin(); itr != waves.end(); ++itr)
+            {
+                const int index = std::distance(waves.begin(), itr);
+                itr->tide->setProgress(config.tide[index]);
+                itr->event->setProgress(config.event[index]);
+                list->addItem(new tsl::elm::CategoryHeader("WAVE"));
+                list->addItem(itr->tide);
+                list->addItem(itr->event);
+            }
+
             frame->setContent(list);
 
-            auto search = new tsl::elm::ListItem("Search", "...");
+            auto search = new tsl::elm::ListItem("Search", std::to_string(config.seed));
             search->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
@@ -62,6 +66,8 @@ namespace tesla
             list->addItem(search);
             return frame;
         }
+
+        virtual void update() override{};
     };
 
     class OceanModifier : public tsl::Gui

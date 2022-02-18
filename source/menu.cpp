@@ -34,6 +34,35 @@ namespace tesla
         return value;
     }
 
+    SeedSearch::SeedSearch()
+    {
+        this->mt = std::mt19937(time(NULL));
+        nlohmann::json json = nlohmann::json::parse(load());
+        this->config = json.get<ocean::Config>();
+    }
+
+    std::string SeedSearch::load()
+    {
+        const char *CONFIG_FILE = "/config/ocean/config.json";
+        FsFileSystem fsSdmc;
+        if (R_FAILED(fsOpenSdCardFileSystem(&fsSdmc)))
+            return "";
+        FsFile fileConfig;
+        if (R_FAILED(fsFsOpenFile(&fsSdmc, CONFIG_FILE, FsOpenMode_Read, &fileConfig)))
+            return "";
+
+        s64 configFileSize;
+        if (R_FAILED(fsFileGetSize(&fileConfig, &configFileSize)))
+            return "";
+
+        std::string configFileData(configFileSize, '\0');
+        u64 readSize;
+        Result rc = fsFileRead(&fileConfig, 0, configFileData.data(), configFileSize, FsReadOption_None, &readSize);
+        if (R_FAILED(rc) || readSize != static_cast<u64>(configFileSize))
+            return "";
+        return configFileData;
+    }
+
     u32 SeedSearch::search_target_seed()
     {
         u32 target_wave = get_target_wave();
