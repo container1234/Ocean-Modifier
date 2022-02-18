@@ -54,7 +54,7 @@ namespace tesla
                                                    { config.tide[index] = value; });
                 itr->event->setValueChangedListener([this, index](int value)
                                                     { config.event[index] = value; });
-                list->addItem(new tsl::elm::CategoryHeader("WAVE"));
+                list->addItem(new tsl::elm::CategoryHeader("WAVE" + std::to_string(index + 1)));
                 list->addItem(itr->tide);
                 list->addItem(itr->event);
             }

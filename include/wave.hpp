@@ -43,8 +43,8 @@ namespace ocean
         class WaveInfo
         {
         public:
-            tsl::elm::NamedStepTrackBar *tide = new tsl::elm::NamedStepTrackBar("\u223F", {"Low", "Middle", "High"});
-            tsl::elm::NamedStepTrackBar *event = new tsl::elm::NamedStepTrackBar("\u223F", {"None", "Rush", "Goldie", "Griller", "Rally", "Fog", "Canon"});
+            tsl::elm::NamedStepTrackBar *tide = new tsl::elm::NamedStepTrackBar("\u2248", {"Low", "Middle", "High"});
+            tsl::elm::NamedStepTrackBar *event = new tsl::elm::NamedStepTrackBar("\uE140", {"None", "Rush", "Goldie", "Griller", "Rally", "Fog", "Canon"});
         };
 
         struct WaveType
