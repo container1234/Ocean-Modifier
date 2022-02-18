@@ -18,6 +18,9 @@ namespace ocean
         u8 *event[3];
 
     private:
+        static nlohmann::json initialize();
+
+    private:
         Config() {}
         static const char *FILE_PATH;
     };
