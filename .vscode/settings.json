@@ -76,6 +76,9 @@
     "typeinfo": "cpp",
     "unordered_map": "cpp",
     "utility": "cpp",
-    "vector": "cpp"
+    "vector": "cpp",
+    "forward_list": "cpp",
+    "fstream": "cpp",
+    "valarray": "cpp"
   }
 }

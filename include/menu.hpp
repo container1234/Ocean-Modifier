@@ -1,10 +1,11 @@
 #include <tesla.hpp>
-#include <dmntcht.h>
+// #include <dmntcht.h>
 #include <iomanip>
 #include <random>
 #include "wave.hpp"
 #include "random.hpp"
 #include "config.hpp"
+#include "status.hpp"
 
 #ifndef OCEAN_MODIFIER_INCLUDE_OCEAN_H_
 #define OCEAN_MODIFIER_INCLUDE_OCEAN_H_
@@ -93,8 +94,9 @@ namespace tesla
     {
     public:
         OceanModifier(DmntCheatProcessMetadata);
-        ocean::rom::RomType rom_type;
-        std::string rom_type_str;
+        // ocean::rom::RomType rom_type;
+        // std::string rom_type_str
+        ocean::status::Status *status;
         tsl::elm::ListItem *target;
         tsl::elm::ListItem *memory;
         tsl::elm::ListItem *search;
@@ -108,7 +110,7 @@ namespace tesla
 
         virtual tsl::elm::Element *createUI() override
         {
-            if (this->rom_type == NULL)
+            if (this->status == NULL)
                 return warning_frame();
 
             auto frame = new tsl::elm::OverlayFrame(OVERLAY_TITLE, OVERLAY_VERSION);
@@ -132,12 +134,14 @@ namespace tesla
             }
             return false; });
             // RomType
-            list->addItem(new tsl::elm::CategoryHeader(rom_type_str));
+            list->addItem(new tsl::elm::CategoryHeader(status->rom_version_and_region));
+            auto *build = new tsl::elm::ListItem("BID", convert_u64_to_hex(this->status->build_id));
             // Modifier
             auto *offset = new tsl::elm::ListItem("Base", convert_u64_to_hex(base));
             auto *title = new tsl::elm::ListItem("ID", convert_u64_to_hex(title_id));
             auto *modifier = new tsl::elm::ToggleListItem("Modifier", check_if_seed_fixed());
             modifier->setStateChangedListener(fix_seed_toggle);
+            list->addItem(build);
             list->addItem(title);
             list->addItem(offset);
             list->addItem(modifier);
@@ -160,7 +164,7 @@ namespace tesla
 
         virtual void update() override
         {
-            if (this->rom_type == NULL)
+            if (this->status == NULL)
                 return;
             // Update Search Wave
             // search->setValue(get_target_wave_string());

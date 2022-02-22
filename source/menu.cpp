@@ -146,26 +146,9 @@ namespace tesla
 
     OceanModifier::OceanModifier(DmntCheatProcessMetadata metadata)
     {
-        // this->metadata = metadata;
         base = metadata.main_nso_extents.base;
         title_id = metadata.title_id;
-        this->rom_type = static_cast<ocean::rom::RomType>(metadata.title_id);
-
-        switch (this->rom_type)
-        {
-        case ocean::rom::RomType::JP:
-            this->rom_type_str = "Splatoon 2 (JP)";
-            break;
-        case ocean::rom::RomType::US:
-            this->rom_type_str = "Splatoon 2 (US)";
-            break;
-        case ocean::rom::RomType::EU:
-            this->rom_type_str = "Splatoon 2 (JP)";
-            break;
-        default:
-            this->rom_type_str = "Unknown RomType";
-            break;
-        }
+        this->status = new ocean::status::Status(metadata);
     }
 
     // Get Hex string

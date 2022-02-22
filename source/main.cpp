@@ -1,7 +1,7 @@
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #include <tesla.hpp>    // The Tesla Header
-#include "menu.hpp"     // The Menu Header
-#include "main.hpp"     // The Main Header
+// #include "menu.hpp"     // The Menu Header
+#include "main.hpp" // The Main Header
 #include <dmntcht.h>
 #include <sstream>
 #include <iostream>
