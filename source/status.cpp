@@ -102,5 +102,48 @@ namespace ocean
             this->rom_region_string = ocean::region::rom_region_string(this->region);
             this->rom_version_and_region = this->rom_region_string + " " + this->rom_version_string;
         }
+
+        std::string Status::convert_u64_to_hex(u64 value)
+        {
+            std::stringstream stream;
+            stream << std::uppercase;
+            stream << std::setfill('0') << std::setw(16) << std::hex << value;
+            return "0x" + stream.str();
+        }
+
+        std::string Status::getRegion()
+        {
+            return convert_u64_to_hex(static_cast<u64>(this->region));
+        }
+
+        std::string Status::getRegionText()
+        {
+            return this->rom_region_string;
+        }
+
+        std::string Status::getVersion()
+        {
+            return convert_u64_to_hex(static_cast<u64>(this->version));
+        }
+
+        std::string Status::getVersionText()
+        {
+            return this->rom_version_string;
+        }
+
+        std::string Status::getBuildId()
+        {
+            return convert_u64_to_hex(this->build_id);
+        }
+
+        std::string Status::getRomTypeAndRegion()
+        {
+            return this->rom_version_and_region;
+        }
+
+        u64 Status::getOffset()
+        {
+            return this->offset;
+        }
     }
 }

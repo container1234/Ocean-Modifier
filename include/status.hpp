@@ -44,15 +44,23 @@ namespace ocean
         {
         public:
             Status(DmntCheatProcessMetadata);
+            std::string getRegion();
+            std::string getRegionText();
+            std::string getVersion();
+            std::string getVersionText();
+            u64 getOffset();
+            std::string getBuildId();
+            std::string getRomTypeAndRegion();
+
+        private:
             ocean::region::Region region;
             ocean::version::RomVer version;
+            std::string rom_version_string;
+            std::string rom_region_string;
             std::string rom_version_and_region;
             u64 offset;
             u64 build_id;
-
-        private:
-            std::string rom_version_string;
-            std::string rom_region_string;
+            std::string convert_u64_to_hex(u64);
         };
     }
 }

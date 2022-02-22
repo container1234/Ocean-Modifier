@@ -134,8 +134,8 @@ namespace tesla
             }
             return false; });
             // RomType
-            list->addItem(new tsl::elm::CategoryHeader(status->rom_version_and_region));
-            auto *build = new tsl::elm::ListItem("BID", convert_u64_to_hex(this->status->build_id));
+            list->addItem(new tsl::elm::CategoryHeader(status->getRomTypeAndRegion()));
+            auto *build = new tsl::elm::ListItem("BID", status->getBuildId());
             // Modifier
             auto *offset = new tsl::elm::ListItem("Base", convert_u64_to_hex(base));
             auto *title = new tsl::elm::ListItem("ID", convert_u64_to_hex(title_id));
