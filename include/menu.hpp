@@ -5,6 +5,7 @@
 #include "random.hpp"
 #include "config.hpp"
 #include "status.hpp"
+#include <thread>
 
 #ifndef OCEAN_MODIFIER_INCLUDE_OCEAN_H_
 #define OCEAN_MODIFIER_INCLUDE_OCEAN_H_
@@ -64,7 +65,9 @@ namespace tesla
             search->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
-                *(this->game_random_seed) = search_target_seed();
+                std::thread thread([this]
+                                   { *(this->game_random_seed) = search_target_seed(); });
+                thread.join();
                 return true;
             }
             return false; });
