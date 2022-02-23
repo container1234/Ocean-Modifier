@@ -35,22 +35,39 @@ namespace ocean
         };
 
         std::string rom_version_string(RomVer);
-        u64 address_offset();
+        u64 get_address_offset(RomVer);
     }
 
-    namespace status
+    namespace system
     {
-        class Status
+        class System
         {
         public:
-            Status(DmntCheatProcessMetadata);
+            System(DmntCheatProcessMetadata);
             std::string getRegion();
+            region::Region getRegionType();
             std::string getRegionText();
             std::string getVersion();
+            version::RomVer getVersionType();
             std::string getVersionText();
-            u64 getOffset();
             std::string getBuildId();
             std::string getRomTypeAndRegion();
+            std::string getBaseAddress();
+            u64 getTargetAddress();
+            u32 getGameRandomSeed();
+            std::string getGameTitleIdText();
+            std::string getGameRandomSeedText();
+            u32 *getGameRandomSeedAddress();
+            bool isGameRunning();
+
+            // Memory
+            void writeDataToMemory();
+            void restoreDataFromMemory();
+            u32 readDataFromMemory();
+            std::string getGameRandomSeedTextFromMemory();
+
+        protected:
+            u64 base;
 
         private:
             ocean::region::Region region;
@@ -60,7 +77,11 @@ namespace ocean
             std::string rom_version_and_region;
             u64 offset;
             u64 build_id;
+            u64 title_id;
+            u32 game_random_seed;
             std::string convert_u64_to_hex(u64);
+            std::string convert_u32_to_hex(u32);
         };
     }
+    // u64 ocean::system::System::base = 0x00000000;
 }

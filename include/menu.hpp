@@ -1,5 +1,4 @@
 #include <tesla.hpp>
-// #include <dmntcht.h>
 #include <iomanip>
 #include <random>
 #include "wave.hpp"
@@ -10,23 +9,21 @@
 #ifndef OCEAN_MODIFIER_INCLUDE_OCEAN_H_
 #define OCEAN_MODIFIER_INCLUDE_OCEAN_H_
 #define SEED_INST_OFFSET 0x0037F340
-#define OVERLAY_VERSION "v1.0.3"
+#define OVERLAY_VERSION "v1.0.4"
 #define OVERLAY_TITLE "Ocean Modifier"
 
 namespace tesla
 {
-    u32 read_seed_inst();
-    bool check_if_seed_fixed();
-    static u64 base;
-    static u64 title_id;
-    static u32 game_random_seed;
+    // u32 read_seed_inst();
+    // bool check_if_seed_fixed();
     static ocean::wave::WaveType wave;
 
     class SeedSearch : public tsl::Gui
     {
     public:
-        SeedSearch();
+        SeedSearch(u32 *);
         std::mt19937 mt;
+        u32 *game_random_seed;
         ocean::Config config;
         void load();
         void write();
@@ -67,7 +64,7 @@ namespace tesla
             search->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
-                game_random_seed = search_target_seed();
+                *(this->game_random_seed) = search_target_seed();
                 return true;
             }
             return false; });
@@ -90,27 +87,22 @@ namespace tesla
         };
     };
 
-    class OceanModifier : public tsl::Gui
+    class OceanModifier : public tsl::Gui, ocean::system::System
     {
+        using ocean::system::System::System;
+
     public:
-        OceanModifier(DmntCheatProcessMetadata);
-        // ocean::rom::RomType rom_type;
-        // std::string rom_type_str
-        ocean::status::Status *status;
         tsl::elm::ListItem *target;
         tsl::elm::ListItem *memory;
         tsl::elm::ListItem *search;
         static bool fix_seed_flag;
         static void fix_seed_toggle(bool);
         static void update_seed_inst();
-        static void write_seed_inst(u32);
-        static void restore_seed_inst();
-        std::string convert_u32_to_hex(u32);
-        std::string convert_u64_to_hex(u64);
 
         virtual tsl::elm::Element *createUI() override
         {
-            if (this->status == NULL)
+            // IF SPLATOON2 IS NOT RUNNING
+            if (!isGameRunning())
                 return warning_frame();
 
             auto frame = new tsl::elm::OverlayFrame(OVERLAY_TITLE, OVERLAY_VERSION);
@@ -122,34 +114,34 @@ namespace tesla
             search->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
-                tsl::changeTo<SeedSearch>();
+                tsl::changeTo<SeedSearch>(getGameRandomSeedAddress());
                 return true;
             }
             return false; });
             writer->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
-                write_seed_inst(game_random_seed);
+                writeDataToMemory();
                 return true;
             }
             return false; });
             // RomType
-            list->addItem(new tsl::elm::CategoryHeader(status->getRomTypeAndRegion()));
-            auto *build = new tsl::elm::ListItem("BID", status->getBuildId());
+            list->addItem(new tsl::elm::CategoryHeader(getRomTypeAndRegion()));
+            auto *build = new tsl::elm::ListItem("BID", getBuildId());
             // Modifier
-            auto *offset = new tsl::elm::ListItem("Base", convert_u64_to_hex(base));
-            auto *title = new tsl::elm::ListItem("ID", convert_u64_to_hex(title_id));
-            auto *modifier = new tsl::elm::ToggleListItem("Modifier", check_if_seed_fixed());
-            modifier->setStateChangedListener(fix_seed_toggle);
+            auto *offset = new tsl::elm::ListItem("Base", getBaseAddress());
+            auto *title = new tsl::elm::ListItem("ID", getGameTitleIdText());
+            // auto *modifier = new tsl::elm::ToggleListItem("Modifier", check_if_seed_fixed());
+            // modifier->setStateChangedListener(fix_seed_toggle);
             list->addItem(build);
             list->addItem(title);
             list->addItem(offset);
-            list->addItem(modifier);
+            // list->addItem(modifier);
             // Seed
             list->addItem(new tsl::elm::CategoryHeader("Seed"));
             list->addItem(search);
-            target = new tsl::elm::ListItem("Target", convert_u32_to_hex(game_random_seed));
-            memory = new tsl::elm::ListItem("Memory", convert_u32_to_hex(game_random_seed));
+            target = new tsl::elm::ListItem("Target", getGameRandomSeedText());
+            memory = new tsl::elm::ListItem("Memory", getGameRandomSeedText());
             list->addItem(target);
             list->addItem(memory);
             list->addItem(writer);
@@ -164,16 +156,13 @@ namespace tesla
 
         virtual void update() override
         {
-            if (this->status == NULL)
+            if (!isGameRunning())
                 return;
-            // Update Search Wave
-            // search->setValue(get_target_wave_string());
             // Update Target Seed
-            target->setValue(convert_u32_to_hex(game_random_seed));
+            target->setValue(getGameRandomSeedText());
 
             // Read Memory Seed
-            if (check_if_seed_fixed())
-                memory->setValue(convert_u32_to_hex(read_seed_inst()));
+            memory->setValue(getGameRandomSeedTextFromMemory());
         }
 
         virtual tsl::elm::OverlayFrame *warning_frame()

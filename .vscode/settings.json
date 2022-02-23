@@ -79,6 +79,9 @@
     "vector": "cpp",
     "forward_list": "cpp",
     "fstream": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "__functional_03": "cpp",
+    "__memory": "cpp",
+    "filesystem": "cpp"
   }
 }

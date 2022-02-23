@@ -16,30 +16,10 @@ namespace tesla
         return stream.str();
     }
 
-    // Check game random seed is fixed
-    bool check_if_seed_fixed()
-    {
-        char inst[8];
-        constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
-        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
-        return !((inst == inst_orig) | (inst[3] != 0xD2) | (inst[7] != 0xF2));
-    }
-
-    // Read data from memory
-    u32 read_seed_inst()
-    {
-        u32 value = 0;
-        u32 inst;
-        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
-        value |= (inst >> 5 & 0xFFFF) << 16;
-        dmntchtReadCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
-        value |= (inst >> 5 & 0xFFFF);
-        return value;
-    }
-
-    SeedSearch::SeedSearch()
+    SeedSearch::SeedSearch(u32 *game_random_seed)
     {
         this->mt = std::mt19937(time(NULL));
+        this->game_random_seed = game_random_seed;
         // Load config.json
         this->load();
     }
@@ -72,7 +52,7 @@ namespace tesla
     u32 SeedSearch::search_target_seed()
     {
         u32 target_wave = get_target_wave();
-        for (u32 loop = 0; loop <= 0x10000; loop++)
+        for (u32 loop = 0; loop <= 0x100000; loop++)
         {
             u32 random_seed = static_cast<u32>(mt());
             if (target_wave == get_wave_info(random_seed))
@@ -111,30 +91,13 @@ namespace tesla
         return mWave.tide[0] * 100000 + mWave.event[0] * 10000 + mWave.tide[1] * 1000 + mWave.event[1] * 100 + mWave.tide[2] * 10 + mWave.event[2] * 1;
     }
 
-    // Write data to memory
-    void OceanModifier::write_seed_inst(u32 value)
-    {
-        u32 inst = 0;
-        inst = 0xD2A00000 | ((value >> 16) << 5);
-        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET, &inst, sizeof(inst));
-        inst = 0xF2800000 | ((value & 0xFFFF) << 5);
-        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET + 4, &inst, sizeof(inst));
-    }
-
-    // Restore original data
-    void OceanModifier::restore_seed_inst()
-    {
-        constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
-        dmntchtWriteCheatProcessMemory(base + SEED_INST_OFFSET, &inst_orig, sizeof(inst_orig));
-    }
-
     // Update game random seed
     void OceanModifier::update_seed_inst()
     {
-        if (fix_seed_flag)
-            write_seed_inst(game_random_seed);
-        else
-            restore_seed_inst();
+        // if (fix_seed_flag)
+        //     writeDataToMemory();
+        // else
+        //     restoreDataFromMemory();
     }
 
     // Toggle fix seed flag
@@ -144,30 +107,27 @@ namespace tesla
         update_seed_inst();
     }
 
-    OceanModifier::OceanModifier(DmntCheatProcessMetadata metadata)
-    {
-        base = metadata.main_nso_extents.base;
-        title_id = metadata.title_id;
-        this->status = new ocean::status::Status(metadata);
-    }
+    // OceanModifier::OceanModifier(DmntCheatProcessMetadata metadata)
+    // {
+    // }
 
-    // Get Hex string
-    std::string OceanModifier::convert_u32_to_hex(u32 game_random_seed)
-    {
-        std::stringstream stream;
-        stream << std::uppercase;
-        stream << std::setfill('0') << std::setw(8) << std::hex << game_random_seed;
-        return "0x" + stream.str();
-    }
+    // // Get Hex string
+    // std::string OceanModifier::convert_u32_to_hex(u32 game_random_seed)
+    // {
+    //     std::stringstream stream;
+    //     stream << std::uppercase;
+    //     stream << std::setfill('0') << std::setw(8) << std::hex << game_random_seed;
+    //     return "0x" + stream.str();
+    // }
 
-    // Get Hex string
-    std::string OceanModifier::convert_u64_to_hex(u64 address)
-    {
-        std::stringstream stream;
-        stream << std::uppercase;
-        stream << std::setfill('0') << std::setw(16) << std::hex << address;
-        return "0x" + stream.str();
-    }
+    // // Get Hex string
+    // std::string OceanModifier::convert_u64_to_hex(u64 address)
+    // {
+    //     std::stringstream stream;
+    //     stream << std::uppercase;
+    //     stream << std::setfill('0') << std::setw(16) << std::hex << address;
+    //     return "0x" + stream.str();
+    // }
 
     bool OceanModifier::fix_seed_flag = false;
 }

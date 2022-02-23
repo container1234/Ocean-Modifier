@@ -56,7 +56,7 @@ namespace ocean
             }
         }
 
-        u64 address_offset(version::RomVer version)
+        u64 get_address_offset(version::RomVer version)
         {
             switch (version)
             {
@@ -88,22 +88,27 @@ namespace ocean
         }
     }
 
-    namespace status
+    namespace system
     {
-        Status::Status(DmntCheatProcessMetadata metadata)
+        System::System(DmntCheatProcessMetadata metadata)
         {
+            // Version/Region Enum
             this->region = static_cast<region::Region>(metadata.title_id);
             u64 build_id = 0;
             std::memcpy(&build_id, metadata.main_nso_build_id, sizeof(u64));
             this->build_id = __builtin_bswap64(build_id);
             this->version = static_cast<version::RomVer>(this->build_id);
-            // this->offset = this->version->address_offset();
+            this->title_id = metadata.title_id;
+            // Offset/Base
+            this->base = metadata.main_nso_extents.base;
+            this->offset = ocean::version::get_address_offset(this->version);
+            // Version/Region Text
             this->rom_version_string = ocean::version::rom_version_string(this->version);
             this->rom_region_string = ocean::region::rom_region_string(this->region);
             this->rom_version_and_region = this->rom_region_string + " " + this->rom_version_string;
         }
 
-        std::string Status::convert_u64_to_hex(u64 value)
+        std::string System::convert_u64_to_hex(u64 value)
         {
             std::stringstream stream;
             stream << std::uppercase;
@@ -111,39 +116,123 @@ namespace ocean
             return "0x" + stream.str();
         }
 
-        std::string Status::getRegion()
+        std::string System::convert_u32_to_hex(u32 value)
+        {
+            std::stringstream stream;
+            stream << std::uppercase;
+            stream << std::setfill('0') << std::setw(8) << std::hex << value;
+            return "0x" + stream.str();
+        }
+
+        std::string System::getRegion()
         {
             return convert_u64_to_hex(static_cast<u64>(this->region));
         }
 
-        std::string Status::getRegionText()
+        region::Region System::getRegionType()
+        {
+            return this->region;
+        }
+
+        std::string System::getRegionText()
         {
             return this->rom_region_string;
         }
 
-        std::string Status::getVersion()
+        std::string System::getVersion()
         {
             return convert_u64_to_hex(static_cast<u64>(this->version));
         }
 
-        std::string Status::getVersionText()
+        version::RomVer System::getVersionType()
+        {
+            return this->version;
+        }
+
+        std::string System::getVersionText()
         {
             return this->rom_version_string;
         }
 
-        std::string Status::getBuildId()
+        std::string System::getBuildId()
         {
             return convert_u64_to_hex(this->build_id);
         }
 
-        std::string Status::getRomTypeAndRegion()
+        std::string System::getRomTypeAndRegion()
         {
             return this->rom_version_and_region;
         }
 
-        u64 Status::getOffset()
+        std::string System::getBaseAddress()
         {
-            return this->offset;
+            return convert_u64_to_hex(this->base);
+        }
+
+        u64 System::getTargetAddress()
+        {
+            return this->base + this->offset;
+        }
+
+        u32 System::getGameRandomSeed()
+        {
+            return this->game_random_seed;
+        }
+
+        std::string System::getGameRandomSeedText()
+        {
+            return convert_u32_to_hex(this->game_random_seed);
+        }
+
+        std::string System::getGameTitleIdText()
+        {
+            return convert_u64_to_hex(this->title_id);
+        }
+
+        u32 *System::getGameRandomSeedAddress()
+        {
+            return &this->game_random_seed;
+        }
+
+        u32 System::readDataFromMemory()
+        {
+            u64 target = this->getTargetAddress();
+            u32 value = 0;
+            u32 inst;
+            dmntchtReadCheatProcessMemory(target, &inst, sizeof(inst));
+            value |= (inst >> 5 & 0xFFFF) << 16;
+            dmntchtReadCheatProcessMemory(target + 4, &inst, sizeof(inst));
+            value |= (inst >> 5 & 0xFFFF);
+            return value;
+        }
+
+        std::string System::getGameRandomSeedTextFromMemory()
+        {
+            return convert_u32_to_hex(this->readDataFromMemory());
+        }
+
+        void System::writeDataToMemory()
+        {
+            u32 game_random_seed = this->game_random_seed;
+            u64 target = this->getTargetAddress();
+            // Convert Int to Hex
+            u32 inst = 0;
+            inst = 0xD2A00000 | ((game_random_seed >> 16) << 5);
+            dmntchtWriteCheatProcessMemory(target, &inst, sizeof(inst));
+            inst = 0xF2800000 | ((game_random_seed & 0xFFFF) << 5);
+            dmntchtWriteCheatProcessMemory(target + 4, &inst, sizeof(inst));
+        }
+
+        void System::restoreDataFromMemory()
+        {
+            u64 target = this->getTargetAddress();
+            constexpr char inst_orig[8] = {0x00, 0x01, 0x40, 0xF9, 0x93, 0xE1, 0x4E, 0x94};
+            dmntchtWriteCheatProcessMemory(target, &inst_orig, sizeof(inst_orig));
+        }
+
+        bool System::isGameRunning()
+        {
+            return (this->region == region::Region::JP || this->region == region::Region::US || this->region == region::Region::EU);
         }
     }
 }
