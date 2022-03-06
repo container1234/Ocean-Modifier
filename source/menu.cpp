@@ -43,7 +43,13 @@ namespace tesla
         tsl::hlp::doWithSDCardHandle([&]()
                                      { 
             std::ifstream ifs(CONFIG_FILE);
-            std::string data = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+            std::string data;
+            if (ifs.is_open())
+            {
+                data = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+            } else {
+                data = "{\"event\":[0,0,0],\"seed\":0,\"tide\":[1,1,1]}";
+            }
             nlohmann::json json = nlohmann::json::parse(data);
             this->config = json.get<ocean::Config>(); });
     }
