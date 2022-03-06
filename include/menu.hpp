@@ -90,6 +90,70 @@ namespace tesla
         };
     };
 
+    class SeedInput : public tsl::Gui, ocean::system::System
+    {
+        using ocean::system::System::System;
+
+    public:
+        SeedInput(u32 *);
+        u32 *game_random_seed;
+        int cursor = 7;
+        virtual tsl::elm::Element *createUI() override
+        {
+            auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "Seed Modifier");
+            auto seed = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h)
+                                                      {
+                std::stringstream stream;
+                stream << std::setfill(' ') << std::setw(8 - cursor) << ".";
+                std::string cursor_str = stream.str();
+                renderer->drawString(cursor_str.c_str(), false, 70, 310, 25, renderer->a(0xFFFF));
+                renderer->drawString(this->getGameRandomSeedText().c_str(), false, 70, 340, 25, renderer->a(0xFFFF)); });
+            
+            seed->setClickListener([this](u64 keys)
+                                     {
+            if (keys & HidNpadButton_Left) {
+                cursor++;
+                if (cursor > 7)
+                    cursor = 0;
+                return true;
+            }
+            if (keys & HidNpadButton_Right) {
+                cursor--;
+                if (cursor < 0)
+                    cursor = 7;
+                return true;
+            }
+            if (keys & HidNpadButton_Up) {
+                u32 new_seed = this->getGameRandomSeed();
+                if (((new_seed >> (cursor * 4)) & 0xF) == 0xF)
+                {
+                    new_seed &= ~(0xF << (cursor * 4));
+                } else {
+                    new_seed += 1 << (cursor * 4);
+                }
+                *(this->game_random_seed) = new_seed;
+                return true;
+            }
+            if (keys & HidNpadButton_Down) {
+                u32 new_seed = this->getGameRandomSeed();
+                if (((new_seed >> (cursor * 4)) & 0xF) == 0x0)
+                {
+                    new_seed |= (0xF << cursor * 4);
+                } else {
+                    new_seed -= 1 << (cursor * 4);
+                }
+                *(this->game_random_seed) = new_seed;
+                return true;
+            }
+            return false; });
+            frame->setContent(seed);
+            return frame;
+        }
+        
+        virtual void update() override {};
+    
+    };
+
     class OceanModifier : public tsl::Gui, ocean::system::System
     {
         using ocean::system::System::System;
@@ -111,6 +175,7 @@ namespace tesla
             auto frame = new tsl::elm::OverlayFrame(OVERLAY_TITLE, OVERLAY_VERSION);
             auto list = new tsl::elm::List();
             search = new tsl::elm::ListItem("Search");
+            target = new tsl::elm::ListItem("Target", getGameRandomSeedText());
             auto *writer = new tsl::elm::ListItem("Write");
 
             // Method
@@ -121,6 +186,15 @@ namespace tesla
                 return true;
             }
             return false; });
+            
+            target->setClickListener([this](u64 keys)
+                                     {
+            if (keys & HidNpadButton_A) {
+                tsl::changeTo<SeedInput>(getGameRandomSeedAddress());
+                return true;
+            }
+            return false; });
+            
             writer->setClickListener([this](u64 keys)
                                      {
             if (keys & HidNpadButton_A) {
@@ -143,7 +217,6 @@ namespace tesla
             // Seed
             list->addItem(new tsl::elm::CategoryHeader("Seed"));
             list->addItem(search);
-            target = new tsl::elm::ListItem("Target", getGameRandomSeedText());
             memory = new tsl::elm::ListItem("Memory", getGameRandomSeedText());
             list->addItem(target);
             list->addItem(memory);
