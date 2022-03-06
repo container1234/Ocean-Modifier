@@ -39,13 +39,13 @@ include $(DEVKITPRO)/libnx/switch_rules
 #---------------------------------------------------------------------------------
 
 APP_TITLE			:=		Ocean Modifier
-APP_VERSION 	:= 		1.0.2
+APP_VERSION 	:= 		1.0.4
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source libs/Atmosphere-libs/libstratosphere/source/dmnt
 DATA		:=	data
-INCLUDES	:=	include libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt
+INCLUDES	:=	include libs/libtesla/include libs/Atmosphere-libs/libstratosphere/source/dmnt libs/json/include
 
 NO_ICON		:=  1
 
@@ -59,7 +59,7 @@ CFLAGS	:=	-g -Wall -Wshift-count-overflow -O2 -ffunction-sections \
 
 CFLAGS	+=	$(INCLUDE) -D__SWITCH__
 
-CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++17
+CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++17 -pthread
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)

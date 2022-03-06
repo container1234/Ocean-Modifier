@@ -8,7 +8,7 @@ Splatoon 2 Salmon Run seed modifier
 - Unix like operating system(Ubuntu, macOS)
   - Recommend WSL2 on Window10/11
 
-### Get Started for macOC
+### Get Started for macOS
 
 ```sh
 $ wget https://github.com/devkitPro/pacman/releases/download/v1.0.2/devkitpro-pacman-installer.pkg
