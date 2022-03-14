@@ -90,10 +90,8 @@ namespace tesla
         };
     };
 
-    class SeedInput : public tsl::Gui, ocean::system::System
+    class SeedInput : public tsl::Gui
     {
-        using ocean::system::System::System;
-
     public:
         SeedInput(u32 *);
         u32 *game_random_seed;
@@ -101,30 +99,34 @@ namespace tesla
         virtual tsl::elm::Element *createUI() override
         {
             auto frame = new tsl::elm::OverlayFrame("Ocean Modifier", "Seed Modifier");
-            auto seed = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h)
-                                                      {
+            auto seed = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer *renderer, u16 x, u16 y, u16 w, u16 h) {
+                renderer->drawString("^", false, 72 + 16 * (7 - cursor), 340, 25, renderer->a(0xFFFF));
                 std::stringstream stream;
-                stream << std::setfill(' ') << std::setw(8 - cursor) << ".";
-                std::string cursor_str = stream.str();
-                renderer->drawString(cursor_str.c_str(), false, 70, 310, 25, renderer->a(0xFFFF));
-                renderer->drawString(this->getGameRandomSeedText().c_str(), false, 70, 340, 25, renderer->a(0xFFFF)); });
-            
-            seed->setClickListener([this](u64 keys)
-                                     {
-            if (keys & HidNpadButton_Left) {
+                stream << std::uppercase;
+                stream << std::setfill('0') << std::setw(8) << std::hex << *(this->game_random_seed);
+                std::string seed_str = stream.str();
+                renderer->drawString(seed_str.c_str(), false, 70, 310, 25, renderer->a(0xFFFF)); });
+            frame->setContent(seed);
+            return frame;
+        }
+        
+        virtual void update() override {};
+        
+        virtual bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override {
+            if (keysDown & HidNpadButton_Left) {
                 cursor++;
                 if (cursor > 7)
                     cursor = 0;
                 return true;
             }
-            if (keys & HidNpadButton_Right) {
+            if (keysDown & HidNpadButton_Right) {
                 cursor--;
                 if (cursor < 0)
                     cursor = 7;
                 return true;
             }
-            if (keys & HidNpadButton_Up) {
-                u32 new_seed = this->getGameRandomSeed();
+            if (keysDown & HidNpadButton_Up) {
+                u32 new_seed = *(this->game_random_seed);
                 if (((new_seed >> (cursor * 4)) & 0xF) == 0xF)
                 {
                     new_seed &= ~(0xF << (cursor * 4));
@@ -134,8 +136,8 @@ namespace tesla
                 *(this->game_random_seed) = new_seed;
                 return true;
             }
-            if (keys & HidNpadButton_Down) {
-                u32 new_seed = this->getGameRandomSeed();
+            if (keysDown & HidNpadButton_Down) {
+                u32 new_seed = *(this->game_random_seed);
                 if (((new_seed >> (cursor * 4)) & 0xF) == 0x0)
                 {
                     new_seed |= (0xF << cursor * 4);
@@ -145,12 +147,8 @@ namespace tesla
                 *(this->game_random_seed) = new_seed;
                 return true;
             }
-            return false; });
-            frame->setContent(seed);
-            return frame;
+            return false;
         }
-        
-        virtual void update() override {};
     
     };
 

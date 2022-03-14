@@ -3,6 +3,11 @@
 
 namespace tesla
 {
+    SeedInput::SeedInput(u32 *game_random_seed)
+    {
+        this->game_random_seed = game_random_seed;
+    }
+
     u32 SeedSearch::get_target_wave()
     {
         return config.tide[0] * 100000 + config.event[0] * 10000 + config.tide[1] * 1000 + config.event[1] * 100 + config.tide[2] * 10 + config.event[2];
